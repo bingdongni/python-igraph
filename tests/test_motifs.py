@@ -35,6 +35,21 @@ class MotifTests(unittest.TestCase):
 
 
 class TrianglesTests(unittest.TestCase):
+    def testCountAdjacentTriangles(self):
+        graph = Graph(5, [(0, 1), (1, 2), (2, 0), (1, 3), (2, 3)])
+        expected = [0] * graph.vcount()
+        for triangle in graph.list_triangles():
+            for vertex in triangle:
+                expected[vertex] += 1
+        self.assertEqual(graph.count_adjacent_triangles(), expected)
+        self.assertEqual(graph.count_adjacent_triangles(vertices=[3, 1, 3]), [1, 2, 1])
+        self.assertIsInstance(graph.count_adjacent_triangles(1), int)
+        self.assertEqual(graph.count_adjacent_triangles(graph.vs[1]), 2)
+        self.assertEqual(graph.count_adjacent_triangles([]), [])
+        graph.to_directed()
+        graph.add_edges([(0, 0), (0, 1)])
+        self.assertEqual(graph.count_adjacent_triangles(), expected)
+
     def testListTriangles(self):
         g = Graph.Famous("petersen")
         self.assertEqual([], g.list_triangles())

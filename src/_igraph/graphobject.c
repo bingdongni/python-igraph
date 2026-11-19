@@ -7448,6 +7448,42 @@ PyObject *igraphmodule_Graph_is_bipartite(igraphmodule_GraphObject *self,
  **********************************************************************/
 
 /** \ingroup python_interface_graph
+ * \brief Counts triangles incident on each of the selected vertices.
+ * \sa igraph_count_adjacent_triangles
+ */
+PyObject *igraphmodule_Graph_count_adjacent_triangles(igraphmodule_GraphObject *self,
+                                                      PyObject *args, PyObject *kwds) {
+  static char *kwlist[] = { "vertices", NULL };
+  PyObject *vertices = Py_None, *result;
+  igraph_vs_t vs;
+  igraph_vector_t counts;
+  igraph_bool_t return_single = false;
+
+  if (!PyArg_ParseTupleAndKeywords(args, kwds, "|O", kwlist, &vertices)) {
+    return NULL;
+  }
+  if (igraphmodule_PyObject_to_vs_t(vertices, &vs, &self->g, &return_single, 0)) {
+    return NULL;
+  }
+  if (igraph_vector_init(&counts, 0)) {
+    igraph_vs_destroy(&vs);
+    return igraphmodule_handle_igraph_error();
+  }
+
+  if (igraph_count_adjacent_triangles(&self->g, &counts, vs)) {
+    result = igraphmodule_handle_igraph_error();
+  } else if (return_single) {
+    result = igraphmodule_real_t_to_PyObject(VECTOR(counts)[0], IGRAPHMODULE_TYPE_INT);
+  } else {
+    result = igraphmodule_vector_t_to_PyList(&counts, IGRAPHMODULE_TYPE_INT);
+  }
+
+  igraph_vector_destroy(&counts);
+  igraph_vs_destroy(&vs);
+  return result;
+}
+
+/** \ingroup python_interface_graph
  * \brief Calculates the dyad census of the graph
  * \return the dyad census as a 3-tuple
  * \sa igraph_dyad_census
@@ -17010,6 +17046,14 @@ struct PyMethodDef igraphmodule_Graph_methods[] = {
    "L{Graph}, which wraps the result in a L{TriadCensus} object.\n"
    "It is advised to use that. The name of the triplet classes are\n"
    "also documented there.\n\n"
+  },
+  {"count_adjacent_triangles", (PyCFunction) igraphmodule_Graph_count_adjacent_triangles,
+   METH_VARARGS | METH_KEYWORDS,
+   "count_adjacent_triangles(vertices=None)\n--\n\n"
+   "Counts the triangles incident on each given vertex. Edge directions and\n"
+   "multiplicities are ignored.\n\n"
+   "@param vertices: vertices to query, or C{None} for all vertices.\n"
+   "@return: a list of triangle counts, or one integer for a single vertex."
   },
   {"list_triangles", (PyCFunction) igraphmodule_Graph_list_triangles,
    METH_NOARGS,
